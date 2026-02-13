@@ -501,8 +501,12 @@ pub async fn update_llm_timeout_raw_fallback_enabled(
     app: AppHandle,
     enabled: bool,
 ) -> Result<(), String> {
-    persist_local_only_setting(&app, LocalOnlySetting::LlmTimeoutRawFallbackEnabled, &enabled)
-        .map_err(|error| format!("{error:#}"))?;
+    persist_local_only_setting(
+        &app,
+        LocalOnlySetting::LlmTimeoutRawFallbackEnabled,
+        &enabled,
+    )
+    .map_err(|error| format!("{error:#}"))?;
     log::info!("LLM timeout raw fallback enabled: {enabled}");
     Ok(())
 }

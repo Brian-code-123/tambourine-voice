@@ -247,20 +247,20 @@ export function PromptSettings() {
 				<div className="settings-row">
 					<div>
 						<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-							<p className="settings-label">Fallback to Raw STT on LLM Timeout</p>
+							<p className="settings-label">
+								Fallback to Raw STT on LLM Timeout
+							</p>
 							<StatusIndicator status={llmTimeoutRawFallbackMutation.status} />
 						</div>
 						<p className="settings-description">
-							If formatting times out, insert raw transcription instead of dropping
-							text
+							If formatting times out, insert raw transcription instead of
+							dropping text
 						</p>
 					</div>
 					<Switch
 						checked={settings?.llm_timeout_raw_fallback_enabled ?? false}
 						onChange={(event) =>
-							llmTimeoutRawFallbackMutation.mutate(
-								event.currentTarget.checked,
-							)
+							llmTimeoutRawFallbackMutation.mutate(event.currentTarget.checked)
 						}
 						disabled={llmTimeoutRawFallbackMutation.isPending}
 						size="md"
