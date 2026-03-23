@@ -415,7 +415,7 @@ mod tests {
             .expect("failed to load legacy history entries");
 
         assert_eq!(loaded_entries.len(), 1);
-        assert_eq!(loaded_entries[0].id, "legacy-entry-id");
+        assert_eq!(loaded_entries[0].id.as_str(), "legacy-entry-id");
         assert_eq!(loaded_entries[0].raw_text, "");
         assert!(loaded_entries[0].active_app_context.is_none());
     }

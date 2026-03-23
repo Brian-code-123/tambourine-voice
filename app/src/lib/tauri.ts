@@ -310,15 +310,6 @@ interface TypeTextResult {
  */
 export type HistoryEntryId = string & { readonly __brand: "HistoryEntryId" };
 
-/**
- * Create a branded HistoryEntryId from a string value.
- * This is used when deserializing from the Tauri backend.
- * @internal For internal use only (deserialization).
- */
-export function _createHistoryEntryId(id: string): HistoryEntryId {
-	return id as HistoryEntryId;
-}
-
 export interface HotkeyConfig {
 	modifiers: string[];
 	key: string;
