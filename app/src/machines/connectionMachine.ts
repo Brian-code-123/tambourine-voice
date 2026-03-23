@@ -462,7 +462,7 @@ export const connectionMachine = setup({
 			// (the "close" event never fires when the PC is already dead)
 			clearKeepAliveInterval(context.client);
 			context.client.disconnect().catch((error) => {
-				console.debug('[XState] Error while disconnecting client:', error);
+				console.debug("[XState] Error while disconnecting client:", error);
 			});
 		},
 		logState: (_, params: { state: string }): void => {
