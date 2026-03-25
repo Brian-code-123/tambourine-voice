@@ -29,6 +29,9 @@ use mic_capture::{AudioDeviceInfo, MicCapture, MicCaptureManager};
 use settings::{HotkeyConfig, HotkeyType, LocalOnlySetting, SettingClass};
 use state::{AppState, ShortcutState};
 
+const RECORDING_UNAVAILABLE_WHILE_CONNECTING_ERROR: &str =
+    "Recording is unavailable while client is connecting";
+
 #[cfg(desktop)]
 use tauri_plugin_store::StoreExt;
 
@@ -88,6 +91,26 @@ pub(crate) fn normalize_shortcut_string(s: &str) -> String {
         })
         .collect::<Vec<_>>()
         .join("+")
+}
+
+/// Returns whether Rust currently has confirmed server connectivity.
+///
+/// Shortcut handling runs in a sync context, so we use `try_read` to avoid
+/// blocking if another task currently holds the config-sync lock.
+#[cfg(desktop)]
+fn is_server_connected_for_shortcuts(app: &AppHandle) -> bool {
+    let Some(config_sync_state) = app.try_state::<config_sync::ConfigSync>() else {
+        return false;
+    };
+
+    let Ok(config_sync_guard) = config_sync_state.try_read() else {
+        log::debug!(
+            "Unable to read config sync state during shortcut handling; treating as disconnected"
+        );
+        return false;
+    };
+
+    config_sync_guard.is_connected()
 }
 
 /// Get the normalized shortcut string for a hotkey config, falling back to default if invalid
@@ -168,6 +191,16 @@ fn start_recording(
     source: &str,
 ) -> Result<(), String> {
     log::info!("{source}: starting recording");
+
+    // If we're still connecting/reconnecting, don't play start sound or emit
+    // recording-start. Play an explicit unavailable sound instead.
+    if !is_server_connected_for_shortcuts(app) {
+        if sound_enabled {
+            audio::play_sound(audio::SoundType::RecordingUnavailable);
+        }
+        return Err(RECORDING_UNAVAILABLE_WHILE_CONNECTING_ERROR.to_string());
+    }
+
     // Play sound BEFORE muting so it's audible
     if sound_enabled {
         audio::play_sound(audio::SoundType::RecordingStart);
@@ -325,7 +358,9 @@ pub fn handle_shortcut_event(app: &AppHandle, shortcut: &Shortcut, event: TauriS
             match recording_start_result {
                 Ok(()) => ShortcutState::RecordingViaToggle,
                 Err(error) => {
-                    emit_recording_start_failed(app, error, "Toggle");
+                    if error != RECORDING_UNAVAILABLE_WHILE_CONNECTING_ERROR {
+                        emit_recording_start_failed(app, error, "Toggle");
+                    }
                     ShortcutState::Idle
                 }
             }
@@ -354,7 +389,9 @@ pub fn handle_shortcut_event(app: &AppHandle, shortcut: &Shortcut, event: TauriS
             match recording_start_result {
                 Ok(()) => ShortcutState::RecordingViaHold,
                 Err(error) => {
-                    emit_recording_start_failed(app, error, "Hold");
+                    if error != RECORDING_UNAVAILABLE_WHILE_CONNECTING_ERROR {
+                        emit_recording_start_failed(app, error, "Hold");
+                    }
                     ShortcutState::Idle
                 }
             }
