@@ -118,3 +118,17 @@ class TestCombinePromptSections:
         assert MAIN_PROMPT_DEFAULT in result
         assert ADVANCED_PROMPT_DEFAULT in result
         assert DICTIONARY_PROMPT_DEFAULT not in result
+
+    def test_advanced_default_prompt_does_not_request_visible_checklist(self) -> None:
+        """Advanced default prompt should not ask the model to output internal checklist text."""
+        assert "Begin with a concise checklist" not in ADVANCED_PROMPT_DEFAULT
+        # Avoid overfitting to exact wording; require a prohibition on outputting checklists.
+        assert "Do not output" in ADVANCED_PROMPT_DEFAULT
+        assert "checklist" in ADVANCED_PROMPT_DEFAULT.lower()
+
+    def test_dictionary_default_prompt_does_not_request_visible_checklist(self) -> None:
+        """Dictionary default prompt should keep verification internal only."""
+        assert "Begin with a concise checklist" not in DICTIONARY_PROMPT_DEFAULT
+        # Avoid overfitting to exact wording; require a prohibition on outputting checklist content.
+        assert "Do not output" in DICTIONARY_PROMPT_DEFAULT
+        assert "checklist" in DICTIONARY_PROMPT_DEFAULT.lower()
