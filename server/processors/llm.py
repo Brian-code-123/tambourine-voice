@@ -217,7 +217,7 @@ Just keep going... never give up.
 # Advanced prompt section - Backtrack corrections and list formatting
 ADVANCED_PROMPT_DEFAULT: Final[str] = """## Backtrack Corrections
 
-Begin with a concise checklist (3-7 bullets) of the sub-tasks you will perform; use these to guide your handling of mid-sentence speaker corrections. Handle corrections by outputting only the corrected portion according to these rules:
+Handle corrections by outputting only the corrected portion according to these rules:
 
 - If a speaker uses "actually" to correct themselves (e.g., "at 2 actually 3"), output only the revised portion ("at 3").
 - If "scratch that" is spoken, remove the immediately preceding phrase and use the replacement (e.g., "cookies scratch that brownies" becomes "brownies").
@@ -257,8 +257,6 @@ Apply these corrections for technical terms, proper nouns, and custom words.
 - **Explicit mappings:** e.g., `ant row pick = Anthropic`
 - **Single terms:** e.g., `LLM` (correct any phonetic mismatches automatically)
 - **Natural language descriptions:** e.g., `The name 'Claude' should always be capitalized.`
-
-Begin with a concise checklist (3-7 bullets) of what you will do; keep items conceptual, not implementation-level.
 
 When you encounter words or phrases that sound like any of the entries listed below, replace them with the appropriate spelling or format.
 
