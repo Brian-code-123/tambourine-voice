@@ -29,8 +29,11 @@ use mic_capture::{AudioDeviceInfo, MicCapture, MicCaptureManager};
 use settings::{HotkeyConfig, HotkeyType, LocalOnlySetting, SettingClass};
 use state::{AppState, ShortcutState};
 
-const RECORDING_UNAVAILABLE_WHILE_CONNECTING_ERROR: &str =
-    "Recording is unavailable while client is connecting";
+#[cfg(desktop)]
+enum StartRecordingError {
+    UnavailableWhileConnecting,
+    Other(String),
+}
 
 #[cfg(desktop)]
 use tauri_plugin_store::StoreExt;
@@ -189,7 +192,7 @@ fn start_recording(
     audio_mute_manager: Option<&AudioMuteManager>,
     auto_mute_audio: bool,
     source: &str,
-) -> Result<(), String> {
+) -> Result<(), StartRecordingError> {
     log::info!("{source}: starting recording");
 
     // If we're still connecting/reconnecting, don't play start sound or emit
@@ -198,7 +201,7 @@ fn start_recording(
         if sound_enabled {
             audio::play_sound(audio::SoundType::RecordingUnavailable);
         }
-        return Err(RECORDING_UNAVAILABLE_WHILE_CONNECTING_ERROR.to_string());
+        return Err(StartRecordingError::UnavailableWhileConnecting);
     }
 
     // Play sound BEFORE muting so it's audible
@@ -211,19 +214,21 @@ fn start_recording(
     let mut mute_manager_used_for_start_attempt: Option<&AudioMuteManager> = None;
     if auto_mute_audio {
         let required_audio_mute_manager = audio_mute_manager.ok_or_else(|| {
-            "Mute-audio setting is enabled, but audio mute is unavailable on this system"
-                .to_string()
+            StartRecordingError::Other(
+                "Mute-audio setting is enabled, but audio mute is unavailable on this system"
+                    .to_string(),
+            )
         })?;
         if let Err(mute_error) = required_audio_mute_manager.mute() {
             if let Err(recovery_error) = required_audio_mute_manager.unmute() {
-                return Err(format!(
+                return Err(StartRecordingError::Other(format!(
                     "Failed to mute system audio before recording: {mute_error}. \
                      Additionally failed to recover audio mute state after mute failure: {recovery_error}"
-                ));
+                )));
             }
-            return Err(format!(
+            return Err(StartRecordingError::Other(format!(
                 "Failed to mute system audio before recording: {mute_error}"
-            ));
+            )));
         }
         mute_manager_used_for_start_attempt = Some(required_audio_mute_manager);
     }
@@ -231,15 +236,15 @@ fn start_recording(
     if let Err(emit_error) = app.emit(EventName::RecordingStart.as_str(), ()) {
         if let Some(mute_manager) = mute_manager_used_for_start_attempt {
             if let Err(unmute_error) = mute_manager.unmute() {
-                return Err(format!(
+                return Err(StartRecordingError::Other(format!(
                     "Failed to emit recording-start event: {emit_error}. \
                      Additionally failed to restore system audio mute state: {unmute_error}"
-                ));
+                )));
             }
         }
-        return Err(format!(
+        return Err(StartRecordingError::Other(format!(
             "Failed to emit recording-start event: {emit_error}"
-        ));
+        )));
     }
 
     Ok(())
@@ -344,8 +349,15 @@ pub fn handle_shortcut_event(app: &AppHandle, shortcut: &Shortcut, event: TauriS
 
     *current_state = match (&*current_state, shortcut_event) {
         (ShortcutState::Idle, ShortcutEvent::TogglePressed) => {
+            if !is_server_connected_for_shortcuts(app) {
+                if sound_enabled {
+                    audio::play_sound(audio::SoundType::RecordingUnavailable);
+                }
+                ShortcutState::Idle
+            } else {
             let _ = app.emit(EventName::PrepareRecording.as_str(), ());
             ShortcutState::PreparingToRecordViaToggle
+            }
         }
         (ShortcutState::PreparingToRecordViaToggle, ShortcutEvent::ToggleReleased) => {
             let recording_start_result = start_recording(
@@ -357,10 +369,9 @@ pub fn handle_shortcut_event(app: &AppHandle, shortcut: &Shortcut, event: TauriS
             );
             match recording_start_result {
                 Ok(()) => ShortcutState::RecordingViaToggle,
-                Err(error) => {
-                    if error != RECORDING_UNAVAILABLE_WHILE_CONNECTING_ERROR {
-                        emit_recording_start_failed(app, error, "Toggle");
-                    }
+                Err(StartRecordingError::UnavailableWhileConnecting) => ShortcutState::Idle,
+                Err(StartRecordingError::Other(error)) => {
+                    emit_recording_start_failed(app, error, "Toggle");
                     ShortcutState::Idle
                 }
             }
@@ -388,10 +399,9 @@ pub fn handle_shortcut_event(app: &AppHandle, shortcut: &Shortcut, event: TauriS
             );
             match recording_start_result {
                 Ok(()) => ShortcutState::RecordingViaHold,
-                Err(error) => {
-                    if error != RECORDING_UNAVAILABLE_WHILE_CONNECTING_ERROR {
-                        emit_recording_start_failed(app, error, "Hold");
-                    }
+                Err(StartRecordingError::UnavailableWhileConnecting) => ShortcutState::Idle,
+                Err(StartRecordingError::Other(error)) => {
+                    emit_recording_start_failed(app, error, "Hold");
                     ShortcutState::Idle
                 }
             }
