@@ -271,6 +271,7 @@ After each correction, verify accuracy internally and make minimal adjustments a
 - Pipecat
 - Tauri"""
 
+
 def combine_prompt_sections(
     main_custom: str | None,
     advanced_enabled: bool,
