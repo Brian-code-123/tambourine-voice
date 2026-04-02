@@ -29,7 +29,9 @@ def _strip_leading_checklist_like_lines(text: str) -> str:
             i += 1
             continue
         # short single-phrase checklist items
-        if len(line.split()) <= 6 and any(word in line.lower() for word in ("check", "verify", "confirm", "ensure")):
+        if len(line.split()) <= 6 and any(
+            word in line.lower() for word in ("check", "verify", "confirm", "ensure")
+        ):
             i += 1
             continue
         break
@@ -54,4 +56,6 @@ def test_mock_llm_output_with_checklist_is_stripped() -> None:
     assert "Confirm capitalization" not in formatted
 
     # The transcription body remains and is preserved
-    assert formatted.startswith("Final transcription:"), "Transcription body should remain after stripping checklist"
+    assert formatted.startswith("Final transcription:"), (
+        "Transcription body should remain after stripping checklist"
+    )
