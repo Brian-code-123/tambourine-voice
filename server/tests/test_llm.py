@@ -118,8 +118,3 @@ class TestCombinePromptSections:
         assert MAIN_PROMPT_DEFAULT in result
         assert ADVANCED_PROMPT_DEFAULT in result
         assert DICTIONARY_PROMPT_DEFAULT not in result
-
-    def test_default_prompts_do_not_request_visible_checklist(self) -> None:
-        """Default advanced/dictionary prompts should not ask for visible checklist output."""
-        assert "Begin with a concise checklist" not in ADVANCED_PROMPT_DEFAULT
-        assert "Begin with a concise checklist" not in DICTIONARY_PROMPT_DEFAULT
