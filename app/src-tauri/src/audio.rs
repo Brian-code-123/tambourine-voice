@@ -9,10 +9,12 @@ use std::time::Duration;
 pub enum SoundType {
     RecordingStart,
     RecordingStop,
+    RecordingUnavailable,
 }
 
 const START_SOUND: &[u8] = include_bytes!("assets/start.mp3");
 const STOP_SOUND: &[u8] = include_bytes!("assets/stop.mp3");
+const RECORDING_UNAVAILABLE_SOUND: &[u8] = include_bytes!("assets/recording-unavailable.mp3");
 const DEFAULT_AUDIO_PLAYBACK_DURATION_MS: u64 = 500;
 
 /// Play a sound effect (non-blocking)
@@ -33,6 +35,7 @@ fn play_sound_blocking(
     let sound_data = match sound_type {
         SoundType::RecordingStart => START_SOUND,
         SoundType::RecordingStop => STOP_SOUND,
+        SoundType::RecordingUnavailable => RECORDING_UNAVAILABLE_SOUND,
     };
 
     let cursor = Cursor::new(sound_data);
