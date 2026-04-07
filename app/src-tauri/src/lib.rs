@@ -168,11 +168,12 @@ fn start_recording(
     source: &str,
 ) -> Result<(), String> {
     log::info!("{source}: starting recording");
-    // Play sound BEFORE muting so it's audible
+    // Play sound asynchronously so event emission is not delayed.
     if sound_enabled {
-        audio::play_sound(audio::SoundType::RecordingStart);
-        // Brief delay to let sound play before muting
-        std::thread::sleep(std::time::Duration::from_millis(150));
+        let _ = std::thread::spawn(|| {
+            audio::play_sound(audio::SoundType::RecordingStart);
+            std::thread::sleep(std::time::Duration::from_millis(150));
+        });
     }
 
     let mut mute_manager_used_for_start_attempt: Option<&AudioMuteManager> = None;
