@@ -13,8 +13,8 @@ dependencies = [
     "pydantic-settings>=2.13.1",
     "loguru>=0.7.3",
     "typer>=0.24.1",
-    "fastapi>=0.135.2",
-    "uvicorn>=0.42.0",
+    "fastapi>=0.135.3",
+    "uvicorn>=0.44.0",
     "pydantic>=2.12.5",
     "slowapi>=0.1.9",
 ]
@@ -24,15 +24,15 @@ tambourine-voice-server = "main:app"
 
 [dependency-groups]
 dev = [
-    "pytest>=9.0.2",    #
-    "ruff>=0.15.8",
-    "ty>=0.0.27",
+    "pytest>=9.0.3",    #
+    "ruff>=0.15.10",
+    "ty>=0.0.29",
     "yamllint>=1.38.0",
 ]
 
 [build-system]
 requires = [
-    "uv_build>=0.11.2", #
+    "uv_build>=0.11.6", #
 ]
 build-backend = "uv_build"
 

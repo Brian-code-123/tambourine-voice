@@ -199,14 +199,14 @@ fn start_recording(
     // recording-start. Play an explicit unavailable sound instead.
     if !is_server_connected_for_shortcuts(app) {
         if sound_enabled {
-            audio::play_sound(audio::SoundType::RecordingUnavailable);
+            audio::play_sound(audio::SoundType::Unavailable);
         }
         return Err(StartRecordingError::UnavailableWhileConnecting);
     }
 
     // Play sound BEFORE muting so it's audible
     if sound_enabled {
-        audio::play_sound(audio::SoundType::RecordingStart);
+        audio::play_sound(audio::SoundType::Start);
         // Brief delay to let sound play before muting
         std::thread::sleep(std::time::Duration::from_millis(150));
     }
@@ -280,7 +280,7 @@ fn stop_recording(
         }
     }
     if sound_enabled {
-        audio::play_sound(audio::SoundType::RecordingStop);
+        audio::play_sound(audio::SoundType::Stop);
     }
     let _ = app.emit(EventName::RecordingStop.as_str(), ());
 }
@@ -349,14 +349,14 @@ pub fn handle_shortcut_event(app: &AppHandle, shortcut: &Shortcut, event: TauriS
 
     *current_state = match (&*current_state, shortcut_event) {
         (ShortcutState::Idle, ShortcutEvent::TogglePressed) => {
-            if !is_server_connected_for_shortcuts(app) {
+            if is_server_connected_for_shortcuts(app) {
+                let _ = app.emit(EventName::PrepareRecording.as_str(), ());
+                ShortcutState::PreparingToRecordViaToggle
+            } else {
                 if sound_enabled {
-                    audio::play_sound(audio::SoundType::RecordingUnavailable);
+                    audio::play_sound(audio::SoundType::Unavailable);
                 }
                 ShortcutState::Idle
-            } else {
-            let _ = app.emit(EventName::PrepareRecording.as_str(), ());
-            ShortcutState::PreparingToRecordViaToggle
             }
         }
         (ShortcutState::PreparingToRecordViaToggle, ShortcutEvent::ToggleReleased) => {
