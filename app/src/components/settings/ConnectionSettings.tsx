@@ -4,7 +4,7 @@ import ky from "ky";
 import { Check, Copy, RefreshCw, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { match } from "ts-pattern";
-import { joinURL } from "ufo";
+
 import { useSettings, useUpdateServerUrl } from "../../lib/queries";
 import {
 	type ConnectionState,
@@ -132,7 +132,7 @@ export function ConnectionSettings() {
 		setPingStatus("loading");
 
 		try {
-			await ky.get(joinURL(urlToTest, "health"), {
+			await ky.get(`${urlToTest.replace(/\/+$/, "")}/health`, {
 				timeout: HEALTH_CHECK_TIMEOUT_MS,
 				retry: 0,
 			});

@@ -3,7 +3,7 @@ import type { UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Store } from "@tauri-apps/plugin-store";
 import ky from "ky";
-import { withoutTrailingSlash } from "ufo";
+
 import { z } from "zod";
 import type { ActiveAppContextSnapshot } from "./activeAppContext";
 
@@ -878,7 +878,7 @@ const API_TIMEOUT_MS = 10000;
 // Create ky instance with sensible defaults for API calls
 function createApiClient(serverUrl: string) {
 	return ky.create({
-		prefixUrl: withoutTrailingSlash(serverUrl),
+		prefix: serverUrl,
 		timeout: API_TIMEOUT_MS,
 		retry: {
 			limit: API_RETRY_LIMIT,

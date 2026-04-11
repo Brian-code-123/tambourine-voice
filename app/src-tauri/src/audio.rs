@@ -7,9 +7,9 @@ use std::time::Duration;
 /// Types of sounds that can be played
 #[derive(Debug, Clone, Copy)]
 pub enum SoundType {
-    RecordingStart,
-    RecordingStop,
-    RecordingUnavailable,
+    Start,
+    Stop,
+    Unavailable,
 }
 
 const START_SOUND: &[u8] = include_bytes!("assets/start.mp3");
@@ -33,9 +33,9 @@ fn play_sound_blocking(
     sink.log_on_drop(false);
 
     let sound_data = match sound_type {
-        SoundType::RecordingStart => START_SOUND,
-        SoundType::RecordingStop => STOP_SOUND,
-        SoundType::RecordingUnavailable => RECORDING_UNAVAILABLE_SOUND,
+        SoundType::Start => START_SOUND,
+        SoundType::Stop => STOP_SOUND,
+        SoundType::Unavailable => RECORDING_UNAVAILABLE_SOUND,
     };
 
     let cursor = Cursor::new(sound_data);
