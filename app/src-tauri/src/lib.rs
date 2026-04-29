@@ -214,11 +214,7 @@ fn start_recording(
     // start before muting the system output.
     if sound_enabled {
         if auto_mute_audio {
-            use std::sync::{
-                atomic::Ordering,
-                mpsc,
-                Arc,
-            };
+            use std::sync::{mpsc, Arc};
             use std::time::Duration as StdDuration;
 
             let (tx, rx) = mpsc::channel();
@@ -234,19 +230,15 @@ fn start_recording(
             std::thread::spawn(move || {
                 use std::io::Write;
 
-                let playback_started = rx
-                    .recv_timeout(StdDuration::from_millis(250))
-                    .is_ok();
+                let playback_started = wait_for_recording_start_commit(
+                    rx,
+                    recording_start_committed_for_thread,
+                    StdDuration::from_millis(250),
+                    StdDuration::from_millis(500),
+                    None,
+                );
 
-                let mut waited_for_commit = StdDuration::ZERO;
-                while !recording_start_committed_for_thread.load(Ordering::Acquire)
-                    && waited_for_commit < StdDuration::from_millis(500)
-                {
-                    std::thread::sleep(StdDuration::from_millis(10));
-                    waited_for_commit += StdDuration::from_millis(10);
-                }
-
-                if !recording_start_committed_for_thread.load(Ordering::Acquire) {
+                if !playback_started {
                     return;
                 }
 
@@ -338,6 +330,32 @@ fn start_recording(
     }
 
     Ok(())
+}
+
+#[cfg(desktop)]
+fn wait_for_recording_start_commit(
+    playback_started_rx: std::sync::mpsc::Receiver<()>,
+    recording_start_committed: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    playback_started_wait: std::time::Duration,
+    commit_wait: std::time::Duration,
+    wait_started_notify: Option<std::sync::mpsc::Sender<()>>,
+) -> bool {
+    use std::sync::atomic::Ordering;
+    use std::time::Duration as StdDuration;
+
+    if let Some(wait_started_notify) = wait_started_notify {
+        let _ = wait_started_notify.send(());
+    }
+
+    let playback_started = playback_started_rx.recv_timeout(playback_started_wait).is_ok();
+
+    let mut waited_for_commit = StdDuration::ZERO;
+    while !recording_start_committed.load(Ordering::Acquire) && waited_for_commit < commit_wait {
+        std::thread::sleep(StdDuration::from_millis(10));
+        waited_for_commit += StdDuration::from_millis(10);
+    }
+
+    playback_started && recording_start_committed.load(Ordering::Acquire)
 }
 
 #[cfg(desktop)]
